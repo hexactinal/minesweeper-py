@@ -45,9 +45,11 @@ class Field:
                 this_elem = this_elem + 1
             counter = counter + 1
             this_elem = 0
-
+        
+        self.mines_amount = counter
         if DEBUG_GAME:
-            print('number of mines: {}'.format(counter))
+            print('number of mines: {}'.format(mines_amount))
+        
 
 
     def __str__(self):
@@ -98,9 +100,6 @@ def row_and_col_error_checking(field, usr_in):
     except ValueError:
         print('[ERROR] Column must be a number!')
         return True
-
-    #usr_row = usr_row - 1
-    #usr_col = usr_col - 1
     if usr_row < 0 or usr_col < 0:
         print('[ERROR] The lowest tile number to check is 1, try again!')
         return True
@@ -111,9 +110,15 @@ def row_and_col_error_checking(field, usr_in):
     if usr_col >= field.cols:
         print('[ERROR] Cannot index past the end of the columns, try again!')
         return True
-
-    #print(usr_row, usr_col)
     return False
+
+def print_win_msg():
+    print('__   _____  _   ___        _____  _   _ ')
+    print('\ \ / / _ \| | | \ \      / / _ \| \ | |')
+    print(' \ V | | | | | |  \ \ /\ / | | | |  \| |')
+    print('  | || |_| | |_|   \ V  V /| |_| | |\  |')
+    print('  |_| \___/ \___/   \_/\_/  \___/|_| \_|')
+    exit()
 
 def print_loss_msg():
     print('m     m  mmmm  m    m        m       mmmm   mmmm mmmmmmm')
@@ -124,30 +129,51 @@ def print_loss_msg():
     exit()
 
 def replace_with_commas(field, usr_row, usr_col):
+    NEW_COMMA_TUPLE = ('[,]', True)
     # to left
-
+    
     local_left = usr_col
-    #print(field.reveal_elem[usr_row])
-    for row in field.field:
-        while (local_left >= 0):
-            #print(local_left, field.field[usr_row][local_left])
-            if row[local_left] != '[,]':
+    while local_left >= 0:
+        try:
+            if field.field[usr_row][local_left] != '[,]':
                 break
-            field.reveal_elem[usr_row][local_left] = ('[,]', True)
+            field.reveal_elem[usr_row][local_left] = NEW_COMMA_TUPLE
             local_left = local_left - 1
-        else:
+        except IndexError:
             break
-    #print(field.reveal_elem[usr_row])
 
     # to right
     local_right = 0
     while local_right <= field.cols:
-        if field.field[usr_row][local_right] != '[,]':
-            old_local, _ = field.reveal_elem[usr_row][local_right]
-            field.reveal_elem[usr_row][local_right] = (old_local, True)
+        try:
+            if field.field[usr_row][local_right] != '[,]':
+                old_local, _ = field.reveal_elem[usr_row][local_right]
+                field.reveal_elem[usr_row][local_right] = (old_local, True)
+                break
+            field.reveal_elem[usr_row][local_right] = NEW_COMMA_TUPLE
+            local_right = local_right + 1
+        except IndexError:
             break
-        field.reveal_elem[usr_row][local_right] = ('[,]', True)
-        local_right = local_right + 1
+
+    # to upper
+    local_upper = usr_row
+    while local_upper >= 0:
+        try:
+            if field.field[local_upper][usr_col] != '[,]':
+                break
+            field.reveal_elem[local_upper][usr_col] = NEW_COMMA_TUPLE
+            local_upper = local_upper - 1
+        except IndexError:
+            break
+    
+    # to lower
+    local_lower = 0
+    while local_lower < field.rows:
+        if field.field[local_lower][usr_col] != '[,]':
+            break
+        field.reveal_elem[local_lower][usr_col] = NEW_COMMA_TUPLE
+        local_lower = local_lower + 1
+        
 
 def check_tile(field, usr_in):
     usr_comma_loc = usr_in.find(',')
@@ -164,51 +190,13 @@ def check_tile(field, usr_in):
     else:
         replace_with_commas(field, usr_row, usr_col)
 
-    #debug:
-    #[,] [,] [1] [m] [,] [,] [,] [,] [,] [,]
-    #[,] [,] [,] [,] [1] [m] [,] [,] [,] [,]
-    #[,] [,] [1] [m] [,] [,] [1] [m] [,] [,]
-    #[,] [,] [,] [,] [1] [m] [,] [,] [1] [m]
-    #[,] [,] [,] [,] [,] [,] [1] [m] [,] [,]
-    #[,] [,] [,] [,] [,] [,] [,] [,] [1] [m]
-    #[,] [,] [1] [m] [,] [,] [,] [,] [,] [,]
-    #[,] [,] [,] [,] [1] [m] [,] [,] [,] [,]
-    #[,] [,] [1] [m] [,] [,] [1] [m] [,] [,]
-    #[,] [,] [,] [,] [1] [m] [,] [,] [1] [m]
-
-    #selecting '0,1.':
-    #[,] [,] [1] [ ] [ ] [ ] [ ] [ ] [ ] [ ]
-    #[,] [,] [,] [,] [1] [ ] [ ] [ ] [ ] [ ]
-    #[,] [,] [1] [ ] [ ] [ ] [ ] [ ] [ ] [ ]
-    #[,] [,] [,] [,] [1] [ ] [ ] [ ] [ ] [ ]
-    #[,] [,] [,] [,] [,] [,] [1] [ ] [ ] [ ]
-    #[,] [.] [,] [,] [,] [,] [,] [,] [1] [ ]
-    #[,] [.] [1] [ ] [,] [,] [,] [,] [,] [,]
-    #[,] [.] [,] [,] [1] [ ] [,] [,] [,] [,]
-    #[,] [.] [1] [ ] [,] [,] [1] [ ] [,] [,]
-    #[,] [,] [,] [,] [1] [ ] [ ] [ ] [1] [ ]
-
-    #selecting '0,9.':
-    #[ ] [ ] [1] [ ] [ ] [ ] [ ] [ ] [ ] [ ]
-    #[ ] [ ] [ ] [ ] [1] [ ] [ ] [ ] [ ] [ ]
-    #[ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]
-    #[ ] [ ] [ ] [ ] [1] [ ] [ ] [ ] [ ] [ ]
-    #[ ] [ ] [ ] [ ] [ ] [ ] [1] [ ] [ ] [ ]
-    #[ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [1] [ ]
-    #[ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]
-    #[ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]
-    #[ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]
-    #[ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]
-
-        # check right of selection
-        # check left...
-        # check up...
-        # check down...
-
-    if (s == '[m]'):
+    if s == '[m]':
         print_loss_msg()
+    if s == '[1]':
+        return 1 # to increment the counter
 
 def game_loop(field):
+    found_another_hint = 0
     while True:
         print(field)
         print('What tile do you want to reveal?')
@@ -221,9 +209,11 @@ def game_loop(field):
         row_or_col_error = row_and_col_error_checking(field, usr_in)
         if row_or_col_error:
             continue
-
+        
         check_tile(field, usr_in)
-
+        found_another_hint = found_another_hint + 1
+        if found_another_hint == field.mines_amount:
+            print_win_msg()
 
 def main():
     print('Welcome to Minesweeper!')
